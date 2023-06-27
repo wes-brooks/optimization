@@ -14,10 +14,26 @@ webr:
 
 # Overview {.unnumbered}
 
+Optimization here is understood to mean *function optimization*, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you'd start with an equation derived from theory, like:
+$$ y(t) = \frac{gt^2}{2} $$
+plus some data (observations of $y$ and $t$), then use optimization to find the value of $g$ that fits the data best. 
 
+What does it mean to "fit the data best"? In this case, you'd probably use a measure of error that can handle errors to both positive and negative directions, like squared error ($\sum_{i=1}^n(y_i - \frac{gt_i^2}{2})^2$) or absolute error ($\sum_{i=1}^n|y_i - \frac{gt_i^2}{2}|$). Then you would minimize the error. This minimization (or maximization) is what optimization is all about.
 
 ## WebR example
 
 ```{webr}
-summary( mtcars )
+# input the data
+y = c(5.4, 6.4, 5.4, 6.6, 3.3, 5.9, 3.3, 6.5, 5.4, 5.0)
+time = c(1.04, 1.15, 1.04, 1.16, 0.83, 1.1, 0.81, 1.13, 1.03, 1.03)
+
+# define the loss function
+err = function(g, x, t) {
+  abs(x - g * t^2 / 2) |>
+    sum()
+}
+
+# find the paraeter that minimizes loss
+optim(0, err, x=y, t=time)
 ```
+

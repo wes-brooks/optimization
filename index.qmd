@@ -1,0 +1,23 @@
+---
+title: "Overview"
+format:
+  html:
+    theme: cosmo
+    
+webr:
+  packages: ['ggplot2', 'dplyr']
+---
+
+
+{{< include _webr-include.qmd >}}
+
+
+# Overview {.unnumbered}
+
+
+
+## WebR example
+
+```{webr}
+summary( mtcars )
+```

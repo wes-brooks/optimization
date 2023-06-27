@@ -1,0 +1,28 @@
+project:
+  type: book
+  output-dir: docs
+  resources:
+    - /webr-serviceworker.js
+    - /webr-worker.js
+
+filter: webr
+
+book:
+  title: "Using R in the Browser: WebR"
+  author: "Wesley Brooks"
+  date: last-modified
+  date-format: D MMMM, YYYY
+  search: true
+  repo-url: https://github.com/d-rug/workshop-webr
+  downloads: [pdf]
+  chapters:
+    - index.qmd
+
+  sidebar:
+    logo: https://github.com/d-rug/d-rug.github.io/raw/main/DRUG_final_cobalt.png
+  site-url: https://d-rug.github.io
+
+format:
+  html:
+    theme: cosmo
+    number-sections: false

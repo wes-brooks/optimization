@@ -8,15 +8,16 @@ project:
 filter: webr
 
 book:
-  title: "Using R in the Browser: WebR"
+  title: "Function optimization"
   author: "Wesley Brooks"
   date: last-modified
   date-format: D MMMM, YYYY
   search: true
-  repo-url: https://github.com/d-rug/workshop-webr
+  repo-url: https://github.com/d-rug/optimization
   downloads: [pdf]
   chapters:
     - index.qmd
+    - 01_types.qmd
 
   sidebar:
     logo: https://github.com/d-rug/d-rug.github.io/raw/main/DRUG_final_cobalt.png

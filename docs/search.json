@@ -2,15 +2,22 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "YOUR WORKSHOP TITLE",
+    "title": "Function optimization",
     "section": "",
-    "text": "Overview"
+    "text": "Overview\nOptimization here is understood to mean function optimization, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you’d start with an equation derived from theory, like: \\[ y(t) = \\frac{gt^2}{2} \\] plus some data (observations of \\(y\\) and \\(t\\)), then use optimization to find the value of \\(g\\) that fits the data best.\nWhat does it mean to “fit the data best”? In this case, you’d probably use a measure of error that can handle errors to both positive and negative directions, like squared error (\\(\\sum_{i=1}^n(y_i - \\frac{gt_i^2}{2})^2\\)) or absolute error (\\(\\sum_{i=1}^n|y_i - \\frac{gt_i^2}{2}|\\)). Then you would minimize the error. This minimization (or maximization) is what optimization is all about."
   },
   {
     "objectID": "index.html#webr-example",
     "href": "index.html#webr-example",
-    "title": "YOUR WORKSHOP TITLE",
+    "title": "Function optimization",
     "section": "WebR example",
     "text": "WebR example\n\n\nLoading webR…"
+  },
+  {
+    "objectID": "01_types.html#continuous-parameters",
+    "href": "01_types.html#continuous-parameters",
+    "title": "Types of optimization problems",
+    "section": "Continuous parameters",
+    "text": "Continuous parameters\nIn the case of continuous parameters (like the gravity example before), the basic task is to where the derivative of loss with respect to the parameters is zero. Most (all?) algorithms will find a local minimum, with no guarantee that it finds the global minimum. There are two basic categories of optimizer for continuous parameters: closed form and iterative. A closed form optimizer is a special solution to a specific problem, and generally can’t be applied to a different problem. So, most (all?) generic optimizers are iterative: they progress toward the solution in repeated steps until the steps get small enough that we say the algorithm has converged. Here is an example:"
   }
 ]

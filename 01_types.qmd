@@ -1,0 +1,71 @@
+# Types of optimization problems
+
+There are two broad kinds of optimization problems that you are likely to encounter: those with continuous parameters, and those with discrete parameters.
+
+## Continuous parameters
+
+In the case of continuous parameters (like the gravity example before), the basic task is to where the derivative of loss with respect to the parameters is zero. Most (all?) algorithms will find a *local* minimum, with no guarantee that it finds the global minimum. There are two basic categories of optimizer for continuous parameters: *closed form* and *iterative*. A closed form optimizer is a special solution to a specific problem, and generally can't be applied to a different problem. So, most (all?) generic optimizers are iterative: they progress toward the solution in repeated steps until the steps get small enough that we say the algorithm has *converged*. Here is an example:
+
+```{r}
+#| echo: FALSE
+f = function(t) {((t - 2.1)^3 + (t-5)/3)^2 + 3}
+fw = function(t) {(((t - 3.1))^3 + t^2/2.2 - 5*t/2.2)^2 + 3}
+fww = function(t) {(t-6)^2 * (t-5)^2 + t^2}
+xx = seq(2, 8, length.out=201)
+
+plot(xx, fww(xx), type='l', bty='n', xlab="", ylab="")
+# axis(2, pos=0, at=c(-5, 5, 10, 15, 20))
+# axis(1, pos=0, at=c(-1, 1, 2, 3, 4, 5))
+# 
+# points(2.98, 3, col='red', pch=16)
+# 
+# lines(c(2.98,2.98), c(0,3), lty=3)
+
+# derivatives one and two, plus the quadradic interpolation
+f1 = function(t) {2*((t-2.1)^3 + (t-5)/3) * (3*(t-2.1)^2 + 1/3)}
+f2 = function(t) {2*(3*(t-2.1)^2 + 1/3)^2 + 2*((t-2.1)^2 + (t-5)/3)*6*(t-2.1)}
+
+ff = function(t, start=1) {f2(start)/2*(t- (start - f1(start)/f2(start)))^2 + f(start) - f2(start)/2*(start- (start - f1(start)/f2(start)))^2 }
+
+fw1 = function(t) {2*((t-3.1)^3 + t^2/2.2 - 5*t/2.2) * (3*(t-3.1)^2 + 2*t/2.2 - 5/2.2)}
+fw2 = function(t) {2*( (3*(t-3.1)^2 + t*2/2.2 - 5/2.2) * (3*(t-3.1)^2 + 2*t/2.2 - 5/2.2) + ((t-3.1)^3 + t^2/2.2 - 5*t/2.2) * (6*(t-3.1) + 2/2.2))}
+
+fwf = function(t, start=1) {fw2(start)/2*(t- (start - fw1(start)/fw2(start)))^2 + fw(start) - fw2(start)/2*(start- (start - fw1(start)/fw2(start)))^2 }
+
+
+fww1 = function(t) {2*(t-6)*(t-5)^2 + 2*(t-6)^2*(t-5) + 2*t}
+fww2 = function(t) {2*(t-5)^2 + 4*(t-6)*(t-5) + 4*(t-6)*(t-5) + 2*(t-6)^2 + 2}
+
+fwwf = function(t, start=1) {fww2(start)/2*(t- (start - fww1(start)/fww2(start)))^2 + fww(start) - fww2(start)/2*(start- (start - fww1(start)/fww2(start)))^2 }
+
+# first step
+lines(xx, fwwf(xx, 2.5), lty=2)
+x2 = 2.5 - fww1(2.5)/fww2(2.5)
+points(2.5, fww(2.5), col='red', pch=16)
+
+
+# second step
+lines(xx, fwwf(xx, start=x2), lty=2)
+x3 = x2 - fww1(x2)/fww2(x2)
+points(x2, fww(x2), col='red', pch=16)
+
+
+# third step
+lines(xx, fwwf(xx, start=x3), lty=2)
+x4 = x3 - fww1(x3)/fww2(x3)
+points(x3, fww(x3), col='red', pch=16)
+
+# fourth step
+lines(xx, fwwf(xx, start=x4), lty=2)
+x5 = x4 - fww1(x4)/fww2(x4)
+points(x4, fww(x4), col='red', pch=16)
+
+
+# fifth step
+lines(xx, fwwf(xx, start=x5), lty=2)
+x6 = x5 - fww1(x5)/fww2(x5)
+points(x5, fww(x5), col='red', pch=16)
+```
+
+
+

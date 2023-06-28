@@ -149,152 +149,296 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+<style>
+  .CodeMirror pre {
+    background-color: unset !important;
+  }
+  .btn-webr {
+    background-color: #EEEEEE;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/r/r.js"></script>
+<script type="module">
+  import { WebR } from "https://webr.r-wasm.org/latest/webr.mjs";
+  globalThis.webR = new WebR({
+    SW_URL: "/"
+  });
+  await globalThis.webR.init();
+  globalThis.webRCodeShelter = await new globalThis.webR.Shelter();
+  globalThis.webRCodeShelter.evalR("library(grid)");
+  document.querySelectorAll(".btn-webr").forEach((btn) => {
+    btn.innerText = "Run code";
+    btn.disabled = false;
+  });
+</script>
 <p>There are two broad kinds of optimization problems that you are likely to encounter: those with continuous parameters, and those with discrete parameters.</p>
 <section id="continuous-parameters" class="level2">
 <h2 class="anchored" data-anchor-id="continuous-parameters">Continuous parameters</h2>
 <p>In the case of continuous parameters (like the gravity example before), the basic task is to where the derivative of loss with respect to the parameters is zero. Most (all?) algorithms will find a <em>local</em> minimum, with no guarantee that it finds the global minimum. There are two basic categories of optimizer for continuous parameters: <em>closed form</em> and <em>iterative</em>. A closed form optimizer is a special solution to a specific problem, and generally can’t be applied to a different problem. So, most (all?) generic optimizers are iterative: they progress toward the solution in repeated steps until the steps get small enough that we say the algorithm has <em>converged</em>.</p>
 <p>Next, we can break optimization algorithms into categories based on how much information we have about the derivatives of the function w.r.t. the parameters. The most common categories are to have: 0. No knowledge of the derivatives. 1. Known first derivative. 2. Known first and second derivatives.</p>
 <p>Here is an example:</p>
-<pre class="{webr}"><code>#| echo: FALSE
-f = function(t) {((t - 2.1)^3 + (t-5)/3)^2 + 3}
-fw = function(t) {(((t - 3.1))^3 + t^2/2.2 - 5*t/2.2)^2 + 3}
-fww = function(t) {(t-6)^2 * (t-5)^2 + t^2}
-xx = seq(2, 8, length.out=201)
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-1">
+Loading webR…
+</button>
+<div id="webr-editor-1">
 
-plot(xx, fww(xx), type='l', bty='n', xlab="", ylab="")
-# axis(2, pos=0, at=c(-5, 5, 10, 15, 20))
-# axis(1, pos=0, at=c(-1, 1, 2, 3, 4, 5))
-# 
-# points(2.98, 3, col='red', pch=16)
-# 
-# lines(c(2.98,2.98), c(0,3), lty=3)
+</div>
+<div id="webr-code-output-1">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-1");
+  const outputDiv = document.getElementById("webr-code-output-1");
+  const editorDiv = document.getElementById("webr-editor-1");
 
-# derivatives one and two, plus the quadratic interpolation
-f1 = function(t) {2*((t-2.1)^3 + (t-5)/3) * (3*(t-2.1)^2 + 1/3)}
-f2 = function(t) {2*(3*(t-2.1)^2 + 1/3)^2 + 2*((t-2.1)^2 + (t-5)/3)*6*(t-2.1)}
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
+    value: `source("prepare_grid_plots.R")`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
 
-ff = function(t, start=1) {f2(start)/2*(t- (start - f1(start)/f2(start)))^2 + f(start) - f2(start)/2*(start- (start - f1(start)/f2(start)))^2 }
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
 
-fw1 = function(t) {2*((t-3.1)^3 + t^2/2.2 - 5*t/2.2) * (3*(t-3.1)^2 + 2*t/2.2 - 5/2.2)}
-fw2 = function(t) {2*( (3*(t-3.1)^2 + t*2/2.2 - 5/2.2) * (3*(t-3.1)^2 + 2*t/2.2 - 5/2.2) + ((t-3.1)^3 + t^2/2.2 - 5*t/2.2) * (6*(t-3.1) + 2/2.2))}
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
 
-fwf = function(t, start=1) {fw2(start)/2*(t- (start - fw1(start)/fw2(start)))^2 + fw(start) - fw2(start)/2*(start- (start - fw1(start)/fw2(start)))^2 }
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
 
-
-fww1 = function(t) {2*(t-6)*(t-5)^2 + 2*(t-6)^2*(t-5) + 2*t}
-fww2 = function(t) {2*(t-5)^2 + 4*(t-6)*(t-5) + 4*(t-6)*(t-5) + 2*(t-6)^2 + 2}
-
-fwwf = function(t, start=1) {fww2(start)/2*(t- (start - fww1(start)/fww2(start)))^2 + fww(start) - fww2(start)/2*(start- (start - fww1(start)/fww2(start)))^2 }
-
-# first step
-nr_iterate = function(xloc) {
-  
-  lines(xx, fwwf(xx, start=xloc), lty=2)
-  xnew = xloc - fww1(xloc)/fww2(xloc)
-  points(xloc, fww(xloc), col='red', pch=16)
-
-  xnew
-}
-
-# setup for iteration:
-nr_path = c(2.5) 
-
-#iterate:
-x_new = nr_iterate(tail(nr_path, 1))
-nr_path = c(nr_path, x_new)
-
-
-
-# 
-# lines(xx, fwwf(xx, 2.5), lty=2)
-# x2 = 2.5 - fww1(2.5)/fww2(2.5)
-# points(2.5, fww(2.5), col='red', pch=16)
-# 
-# 
-# # second step
-# lines(xx, fwwf(xx, start=x2), lty=2)
-# x3 = x2 - fww1(x2)/fww2(x2)
-# points(x2, fww(x2), col='red', pch=16)
-# 
-# 
-# # third step
-# lines(xx, fwwf(xx, start=x3), lty=2)
-# x4 = x3 - fww1(x3)/fww2(x3)
-# points(x3, fww(x3), col='red', pch=16)
-# 
-# # fourth step
-# lines(xx, fwwf(xx, start=x4), lty=2)
-# x5 = x4 - fww1(x4)/fww2(x4)
-# points(x4, fww(x4), col='red', pch=16)
-# 
-# 
-# # fifth step
-# lines(xx, fwwf(xx, start=x5), lty=2)
-# x6 = x5 - fww1(x5)/fww2(x5)
-# points(x5, fww(x5), col='red', pch=16)</code></pre>
-<pre class="{webr}"><code>#iterate:
-x_new = nr_iterate(tail(nr_path, 1))
-nr_path = c(nr_path, x_new)
-</code></pre>
-<pre class="{webr}"><code>#| echo: FALSE
-f = function(t) {((t - 2.1)^3 + (t-5)/3)^2 + 3}
-fw = function(t) {(((t - 3.1))^3 + t^2/2.2 - 5*t/2.2)^2 + 3}
-fww = function(t) {(t-6)^2 * (t-5)^2 + t^2}
-xx = seq(2, 8, length.out=201)
-
-plot(xx, fww(xx), type='l', bty='n', xlab="", ylab="")
-# axis(2, pos=0, at=c(-5, 5, 10, 15, 20))
-# axis(1, pos=0, at=c(-1, 1, 2, 3, 4, 5))
-# 
-# points(2.98, 3, col='red', pch=16)
-# 
-# lines(c(2.98,2.98), c(0,3), lty=3)
-
-# derivatives one and two, plus the quadradic interpolation
-fww1 = function(t) {2*(t-6)*(t-5)^2 + 2*(t-6)^2*(t-5) + 2*t}
-fww2 = function(t) {2*(t-5)^2 + 4*(t-6)*(t-5) + 4*(t-6)*(t-5) + 2*(t-6)^2 + 2}
-
-fww1f = function(t, start=1) {fww2(start)/2*(t- (start - fww1(start)/fww2(start)))^2 + fww(start) - fww2(start)/2*(start- (start - fww1(start)/fww2(start)))^2 }
-
-# first step
-
-# lines(xx, fwwf(xx, 2.5), lty=2)
-gd_iterate = function(gamma, x_last) {
-  finished = FALSE
-  while (!finished) {
-    # x_last = tail(path, 1)
-    
-    gamma = gamma / 0.8 * (-sign(fww1(x_last)))
-    trial = fww(x_last + gamma)
-    if (trial &gt; fww(x_last) + 0.2*gamma*fww1(x_last)) {
-      
-      gamma = gamma * 0.8^2
-    } else {
-      x_next = x_last + gamma
-      # path = c(path, x_next)
-      finished = TRUE
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
     }
   }
-  
-  lines( c(x_last, x_next), c(fww(x_last), fww(x_last) + gamma*fww1(x_last)), lty=2)
-  points(x_last, fww(x_last), col='red', pch=1)
-  
-  list("gamma" = gamma, "x_new" = x_next)
-}
 
-path = c(2.5)
-gamma = 0.2
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-2">
+Loading webR…
+</button>
+<div id="webr-editor-2">
 
-# iterate this part to get the solution:
-result = gd_iterate(gamma, tail(path, 1))
-gamma = result[["gamma"]]
-xloc = result[["x_new"]]
-path = c(path, xloc)</code></pre>
-<pre class="{webr}"><code># iterate this part to get the solution:
-result = gd_iterate(gamma, tail(path, 1))
-gamma = result[["gamma"]]
-xloc = result[["x_new"]]
-path = c(path, xloc)</code></pre>
+</div>
+<div id="webr-code-output-2">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-2");
+  const outputDiv = document.getElementById("webr-code-output-2");
+  const editorDiv = document.getElementById("webr-editor-2");
+
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
+    value: `# first pass:\ndrawIt(gplot_nr)\n\n# second pass:\nres = iterate_nr(gplot_nr, x_last = 2.5)\ndrawIt(res[["plot"]])\n\n# third and sbsequent passes:\nres = iterate_nr(res[["plot"]], x_last = res[["x_new"]])\ndrawIt(res[["plot"]])`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
+
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
+
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-3">
+Loading webR…
+</button>
+<div id="webr-editor-3">
+
+</div>
+<div id="webr-code-output-3">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-3");
+  const outputDiv = document.getElementById("webr-code-output-3");
+  const editorDiv = document.getElementById("webr-editor-3");
+
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
+    value: `# first pass:\ndrawIt(gplot_gd)\n\n# second pass:\nresult = iterate_gd(gplot_gd, gamma = 0.005, x_last = 2.5)\ndrawIt(result[["plot"]])\n\n# third and sbsequent passes:\nres = iterate_gd(res[["plot"]], gamma = result[["gamma"]], x_last = res[["x_new"]])\ndrawIt(res[["plot"]])`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
+
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
+
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
 
 
 </section>

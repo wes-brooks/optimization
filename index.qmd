@@ -22,7 +22,7 @@ What does it mean to "fit the data best"? In this case, you'd probably use a mea
 
 ## WebR example
 
-```{webr}
+```{webr intro}
 # input the data
 y = c(5.4, 6.4, 5.4, 6.6, 3.3, 5.9, 3.3, 6.5, 5.4, 5.0)
 time = c(1.04, 1.15, 1.04, 1.16, 0.83, 1.1, 0.81, 1.13, 1.03, 1.03)
@@ -33,7 +33,15 @@ err = function(g, x, t) {
     sum()
 }
 
-# find the paraeter that minimizes loss
+# find the parameter that minimizes loss
 optim(0, err, x=y, t=time)
 ```
 
+
+```{webr}
+
+# second 
+
+```
+
+v

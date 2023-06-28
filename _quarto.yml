@@ -4,6 +4,7 @@ project:
   resources:
     - /webr-serviceworker.js
     - /webr-worker.js
+    - /prepare_grid_plots.R
 
 filter: webr
 

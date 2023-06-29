@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Function optimization",
     "section": "",
-    "text": "URL for the presentation is wes-brooks.github.io/optimization\nOptimization here is understood to mean function optimization, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you’d start with an equation derived from theory, like: \\[ y(t) = \\frac{gt^2}{2} \\] plus some data (observations of \\(y\\) and \\(t\\)), then use optimization to find the value of \\(g\\) that fits the data best.\nWhat does it mean to “fit the data best”? In this case, you’d probably use a measure of error that can handle errors to both positive and negative directions, like squared error (\\(\\sum_{i=1}^n(y_i - \\frac{gt_i^2}{2})^2\\)) or absolute error (\\(\\sum_{i=1}^n|y_i - \\frac{gt_i^2}{2}|\\)). Then you would minimize the error. This minimization (or maximization) is what optimization is all about."
+    "text": "Overview\nOptimization here is understood to mean function optimization, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you’d start with an equation derived from theory, like: \\[ y(t) = \\frac{gt^2}{2} \\] plus some data (observations of \\(y\\) and \\(t\\)), then use optimization to find the value of \\(g\\) that fits the data best.\nWhat does it mean to “fit the data best”? In this case, you’d probably use a measure of error that can handle errors to both positive and negative directions, like squared error (\\(\\sum_{i=1}^n(y_i - \\frac{gt_i^2}{2})^2\\)) or absolute error (\\(\\sum_{i=1}^n|y_i - \\frac{gt_i^2}{2}|\\)). Then you would minimize the error. This minimization (or maximization) is what optimization is all about."
   },
   {
     "objectID": "index.html#webr-example",
@@ -33,5 +33,12 @@
     "title": "Function optimization",
     "section": "optim() example",
     "text": "optim() example\nYour favorite scripting/analysis software surely comes with an optimizer built in. Here, we’ll use R’s optim() to estimate g, the acceleration due to gravity. I dropped ten balls from a height of five meters and measured how long it took for them to hit the ground. Using that data, I will say that the loss is the absolute difference between the five meters of actual height and the distance that the balls should have fallen for any particular estimate of g (which is \\((g \\times t^2) / 2\\)).\n\n\nLoading webR…\n\n\n\n\n\n\n\n\n\nNow, we’ll look at how optim() does that."
+  },
+  {
+    "objectID": "index.html#url-for-the-presentation-is-wes-brooks.github.iooptimization",
+    "href": "index.html#url-for-the-presentation-is-wes-brooks.github.iooptimization",
+    "title": "Function optimization",
+    "section": "URL for the presentation is wes-brooks.github.io/optimization",
+    "text": "URL for the presentation is wes-brooks.github.io/optimization\nOptimization here is understood to mean function optimization, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you’d start with an equation derived from theory, like: \\[ y(t) = \\frac{gt^2}{2} \\] plus some data (observations of \\(y\\) and \\(t\\)), then use optimization to find the value of \\(g\\) that fits the data best.\nWhat does it mean to “fit the data best”? In this case, you’d probably use a measure of error that can handle errors to both positive and negative directions, like squared error (\\(\\sum_{i=1}^n(y_i - \\frac{gt_i^2}{2})^2\\)) or absolute error (\\(\\sum_{i=1}^n|y_i - \\frac{gt_i^2}{2}|\\)). Then you would minimize the error. This minimization (or maximization) is what optimization is all about."
   }
 ]

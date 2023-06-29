@@ -26,8 +26,7 @@ ycoord = function(y) {(y - ylim[[1]]) / diff(ylim)}
 xcoord2 = function(x) {(x - xlim2[[1]]) / diff(xlim2)}
 ycoord2 = function(y) {(y - ylim2[[1]]) / diff(ylim2)}
 
-grid.newpage()
-pushViewport(viewport())
+
 drawIt <- function(gp) {
   pushViewport(viewport())
   grid.draw(gp)
@@ -224,4 +223,5 @@ gplot_nr = gplot_gd = gplot
 path = c(2.5)
 gamma = 0.005
 
+gplot_nr_nonconvex = gplot_gd_nonconvex = gplot
 

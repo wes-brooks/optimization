@@ -11,10 +11,11 @@ webr:
 
 {{< include _webr-include.qmd >}}
 
-# URL for the presentation is wes-brooks.github.io/optimization {.unnumbered}
 
+#### URL is: `wes-brooks.github.io/optimization` {.unnumbered}
 
 # Overview {.unnumbered}
+
 
 Optimization here is understood to mean *function optimization*, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you'd start with an equation derived from theory, like:
 $$ y(t) = \frac{gt^2}{2} $$

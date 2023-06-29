@@ -223,5 +223,5 @@ gplot_nr = gplot_gd = gplot
 path = c(2.5)
 gamma = 0.005
 
-gplot_nr_nonconvex = gplot_gd_nonconvex = gplot
+gplot_nr_nonconvex = gplot_gd_nonconvex = gplot_nonconvex
 

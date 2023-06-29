@@ -43,6 +43,20 @@ Newton-Raphson optimization takes the Taylor expansion of the function to two te
 #drawIt(res[["plot"]])
 ```
 
+Let's look now at an example of a nonconvex function:
+
+```{webr plot-newton-raphson-grid-nonconvex}
+# first pass:
+#drawIt(gplot_nr_nonconvex)
+
+# second pass:
+#gp_nc = iterate_nr(gplot_nr_nonconvex, xloc = 1.3)
+#drawIt(gp_nc[["plot"]])
+
+# third and sbsequent passes:
+#gp_nc = iterate_nr(gp_nc$plot, xloc = gp_nc$x_new)
+#drawIt(gp_nc$plot)
+```
 
 Newton-Raphson is very fast because each step is closed-form. But because the Newton-Raphson algorithm requires evaluating to the second derivative, it can be very slow to optimize a high-dimensional problem (remember that you need to evaluate cross-derivatives of a vector function, so that's $p^2$ derivatives for $p$ parameters - but even wouldn't be so bad if you didn't then need to invert the second-derivative matrix. Truly nasty stuff. I've crashed clusters this way.)
 
@@ -64,6 +78,21 @@ When the second derivatives are unknown or impractical, gradient descent may wor
 ```
 
 
+Gradient descent is better-suited to optimizing our nonconvex function:
+```{webr plot-grad-descent-grid-nc}
+# first pass:
+#drawIt(gplot_nonconvex)
+
+# second pass:
+#gp_gd_nc = iterate_gd_nonconvex(gplot_nonconvex, gamma = 0.015, x_last = 1.3)
+#drawIt(gp_gd_nc[["plot"]])
+
+# third and sbsequent passes:
+#gp_gd_nc = iterate_gd_nonconvex(gp_gd_nc$plot, gamma = gp_gd_nc$gamma, x_last = gp_gd_nc$x_new)
+#drawIt(gp_gd_nc$plot)
+```
+
+
 ### Quick-and-dirty options
 When your number of parameters is small and the data size is modest, you may not have to bother with calculating derivatives. The built-in general-purpose optimization functions in R and Python default to Nelder-Mead or BFGS algorithms, which essentially make each step by trying a bunch of candidates around the current location. They are "slow" in the computer, but fast for the scientist - and only the scientist gets paid for their time.
 
@@ -78,32 +107,34 @@ Often, the reason to do custom optimization is because you need to constrain you
 penguins = read.csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv")
 head(penguins)
 
+# This allows us to separate the masses by species.
+species_indicator = model.matrix(~species+0, data=penguins) 
+head(species_indicator)
+```
+
+Now we've looked at the data. Lets estimate the mass of each penguin species, with the constraint that Chinstrap and Adelie penguins have the same mass.
+
+```{webr optimize-penguin-model}
 # estimate mass of the three species
-# with the constraint that Adelie are 75% the mass of Gentoo
-my_loss = function(mass, adelie, chinstrap, gentoo) {
-  aa = sum((adelie - mass[1])^2, na.rm=TRUE)
-  cc =  sum((chinstrap - mass[2])^2, na.rm=TRUE) 
-  gg =  sum((gentoo - mass[3])^2, na.rm=TRUE) 
-  cons =  mass[4] * (mass[2] - mass[1])
-  
-  cat("aa: ", aa, "\n")
-  cat("cc: ", cc, "\n")
-  cat("gg: ", gg, "\n")
-  cat("cons: ", cons, "\n")
-  cat("tot: ", aa + cc + gg + cons, "\n\n")
-  
-  
-  aa + cc + gg + cons
+# with the constraint that Adelie and Chinstrap have the same mass
+my_loss = function(par, mass, spmat) {
+  sum( abs((mass - spmat %*% as.matrix(par[1:3]))), na.rm=TRUE) +
+    par[4] * (par[1] - par[2])
 }
 
-with(penguins,
-     optim(par = c(Adelie=0, Chinstrap=0, Gentoo=0, lambda=0),
-           fn = my_loss,
-           adelie = body_mass_g[species == "Adelie"],
-           chinstrap = body_mass_g[species == "Chinstrap"],
-           gentoo = body_mass_g[species == "Gentoo"])
-)
+# we have to minimized *squared* gradients now because Lagrange multipliers find
+# a saddlepoint, which is only a local minimum.
+opt_loss = function(par, mass, spp_mat) {
+  par=par
+  nd = numericDeriv(quote(my_loss(par, mass, spp_mat)), "par")
+  sum(attr(nd, "gradient")^2)
+}
 
+# run the optimizer  
+optim(par = c(3000, 3000, 5000, 0),
+     fn = opt_loss,
+     mass = penguins$body_mass_g,
+     spp_mat = species_indicator)
 ```
 
 

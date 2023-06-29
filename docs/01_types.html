@@ -370,11 +370,7 @@ Loading webR…
   runButton.disabled = false;
 </script>
 </div>
-<p>Newton-Raphson is very fast because each step is closed-form. But because the Newton-Raphson algorithm requires evaluating to the second derivative, it can be very slow to optimize a high-dimensional problem (remember that you need to evaluate cross-derivatives of a vector function, so that’s <span class="math inline">\(p^2\)</span> derivatives for <span class="math inline">\(p\)</span> parameters - but even wouldn’t be so bad if you didn’t then need to invert the second-derivative matrix. Truly nasty stuff. I’ve crashed clusters this way.)</p>
-</section>
-<section id="gradient-descent" class="level3">
-<h3 class="anchored" data-anchor-id="gradient-descent">Gradient descent</h3>
-<p>When the second derivatives are unknown or impractical, gradient descent may work better. For gradient descent, you ony need the first derivative w.r.t. each parameter, then take a step in the direction of greatest improvement in the objective. This is simple but not so fast as Newton-Raphson because the size of each step must be tuned by a loop. Still, it is fast and simple and usually the best choice when you’re in a situation of needing to call an optimizer (rather than a professionally engineered estimation function). There are many flavors of gradient descent to improve its speed and stability, but the only one worth mentioning here is conjugate gradient descent (commonly abbreviated CG), which includes some momentum from past steps in future steps. Again, an example may help illustrate the algorithm:</p>
+<p>Let’s look now at an example of a nonconvex function:</p>
 <div class="cell">
 <button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-3">
 Loading webR…
@@ -395,7 +391,185 @@ Loading webR…
     elt.style.height = "auto";
     editorDiv.append(elt);
   },{
+    value: `# first pass:\n#drawIt(gplot_nr_nonconvex)\n\n# second pass:\n#gp_nc = iterate_nr(gplot_nr_nonconvex, xloc = 1.3)\n#drawIt(gp_nc[["plot"]])\n\n# third and sbsequent passes:\n#gp_nc = iterate_nr(gp_nc$plot, xloc = gp_nc$x_new)\n#drawIt(gp_nc$plot)`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
+
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
+
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
+<p>Newton-Raphson is very fast because each step is closed-form. But because the Newton-Raphson algorithm requires evaluating to the second derivative, it can be very slow to optimize a high-dimensional problem (remember that you need to evaluate cross-derivatives of a vector function, so that’s <span class="math inline">\(p^2\)</span> derivatives for <span class="math inline">\(p\)</span> parameters - but even wouldn’t be so bad if you didn’t then need to invert the second-derivative matrix. Truly nasty stuff. I’ve crashed clusters this way.)</p>
+</section>
+<section id="gradient-descent" class="level3">
+<h3 class="anchored" data-anchor-id="gradient-descent">Gradient descent</h3>
+<p>When the second derivatives are unknown or impractical, gradient descent may work better. For gradient descent, you ony need the first derivative w.r.t. each parameter, then take a step in the direction of greatest improvement in the objective. This is simple but not so fast as Newton-Raphson because the size of each step must be tuned by a loop. Still, it is fast and simple and usually the best choice when you’re in a situation of needing to call an optimizer (rather than a professionally engineered estimation function). There are many flavors of gradient descent to improve its speed and stability, but the only one worth mentioning here is conjugate gradient descent (commonly abbreviated CG), which includes some momentum from past steps in future steps. Again, an example may help illustrate the algorithm:</p>
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-4">
+Loading webR…
+</button>
+<div id="webr-editor-4">
+
+</div>
+<div id="webr-code-output-4">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-4");
+  const outputDiv = document.getElementById("webr-code-output-4");
+  const editorDiv = document.getElementById("webr-editor-4");
+
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
     value: `# first pass:\n#drawIt(gplot_gd)\n\n# second pass:\n#result_gd = iterate_gd(gplot_gd, gamma = 0.005, x_last = 2.5)\n#drawIt(result_gd[["plot"]])\n\n# third and sbsequent passes:\n#result_gd = iterate_gd(result_gd[["plot"]], gamma = result_gd[["gamma"]], x_last = result_gd[["x_new"]])\n#drawIt(result_gd[["plot"]])`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
+
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
+
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
+<p>Gradient descent is better-suited to optimizing our nonconvex function:</p>
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-5">
+Loading webR…
+</button>
+<div id="webr-editor-5">
+
+</div>
+<div id="webr-code-output-5">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-5");
+  const outputDiv = document.getElementById("webr-code-output-5");
+  const editorDiv = document.getElementById("webr-editor-5");
+
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
+    value: `# first pass:\n#drawIt(gplot_nonconvex)\n\n# second pass:\n#gp_gd_nc = iterate_gd_nonconvex(gplot_nonconvex, gamma = 0.015, x_last = 1.3)\n#drawIt(gp_gd_nc[["plot"]])\n\n# third and sbsequent passes:\n#gp_gd_nc = iterate_gd_nonconvex(gp_gd_nc$plot, gamma = gp_gd_nc$gamma, x_last = gp_gd_nc$x_new)\n#drawIt(gp_gd_nc$plot)`,
     lineNumbers: true,
     mode: "r",
     theme: "light default",
@@ -474,26 +648,113 @@ Loading webR…
 <h3 class="anchored" data-anchor-id="constrained-optimization">Constrained optimization</h3>
 <p>Often, the reason to do custom optimization is because you need to constrain your solution, such as saying that all of the parameters should sum to one. Equality constraints are easy to implement via <em>Lagrange multipliers</em>. This is a fancy name for adding something like <span class="math inline">\(\lambda (\sum_{i=1}^p \beta_i - 1)\)</span> to your loss function. Since the minimum is found where the derivative of this term w.r.t. <span class="math inline">\(\lambda\)</span> is zero, the minimum is where <span class="math inline">\(\sum_{i=1}^p \beta_i = 1\)</span>. Let’s try it:</p>
 <div class="cell">
-<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-4">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-6">
 Loading webR…
 </button>
-<div id="webr-editor-4">
+<div id="webr-editor-6">
 
 </div>
-<div id="webr-code-output-4">
+<div id="webr-code-output-6">
 <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
-  const runButton = document.getElementById("webr-run-button-4");
-  const outputDiv = document.getElementById("webr-code-output-4");
-  const editorDiv = document.getElementById("webr-editor-4");
+  const runButton = document.getElementById("webr-run-button-6");
+  const outputDiv = document.getElementById("webr-code-output-6");
+  const editorDiv = document.getElementById("webr-editor-6");
 
   const editor = CodeMirror((elt) => {
     elt.style.border = "1px solid #eee";
     elt.style.height = "auto";
     editorDiv.append(elt);
   },{
-    value: `# import the Palmer penguins data\npenguins = read.csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv")\nhead(penguins)\n\n# estimate mass of the three species\n# with the constraint that Adelie are 75% the mass of Gentoo\nmy_loss = function(mass, adelie, chinstrap, gentoo) {\n  aa = sum((adelie - mass[1])^2, na.rm=TRUE)\n  cc =  sum((chinstrap - mass[2])^2, na.rm=TRUE) \n  gg =  sum((gentoo - mass[3])^2, na.rm=TRUE) \n  cons =  mass[4] * (mass[2] - mass[1])\n  \n  cat("aa: ", aa, "\\n")\n  cat("cc: ", cc, "\\n")\n  cat("gg: ", gg, "\\n")\n  cat("cons: ", cons, "\\n")\n  cat("tot: ", aa + cc + gg + cons, "\\n\\n")\n  \n  \n  aa + cc + gg + cons\n}\n\nwith(penguins,\n     optim(par = c(Adelie=0, Chinstrap=0, Gentoo=0, lambda=0),\n           fn = my_loss,\n           adelie = body_mass_g[species == "Adelie"],\n           chinstrap = body_mass_g[species == "Chinstrap"],\n           gentoo = body_mass_g[species == "Gentoo"])\n)\n`,
+    value: `# import the Palmer penguins data\npenguins = read.csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv")\nhead(penguins)\n\n# This allows us to separate the masses by species.\nspecies_indicator = model.matrix(~species+0, data=penguins) \nhead(species_indicator)`,
+    lineNumbers: true,
+    mode: "r",
+    theme: "light default",
+    viewportMargin: Infinity,
+  });
+
+  runButton.onclick = async () => {
+    runButton.disabled = true;
+    let canvas = undefined;
+    await globalThis.webR.init();
+    await webR.evalRVoid("canvas(width=504, height=360)");
+    const result = await webRCodeShelter.captureR(editor.getValue(), {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false,
+      env: webR.objs.globalEnv,
+    });
+    try {
+      await webR.evalRVoid("dev.off()");
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      const msgs = await webR.flush();
+      msgs.forEach(msg => {
+        if (msg.type === "canvasExec"){
+          if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width="700px";
+            canvas.style.display="block";
+            canvas.style.margin="auto";
+          }
+          Function(`this.getContext("2d").${msg.data}`).bind(canvas)();
+        }
+      });
+
+      outputDiv.innerHTML = "";
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  await globalThis.webR.init();
+  runButton.innerText = "Run code";
+  runButton.disabled = false;
+</script>
+</div>
+<p>Now we’ve looked at the data. Lets estimate the mass of each penguin species, with the constraint that Chinstrap and Adelie penguins have the same mass.</p>
+<div class="cell">
+<button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-7">
+Loading webR…
+</button>
+<div id="webr-editor-7">
+
+</div>
+<div id="webr-code-output-7">
+<pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  const runButton = document.getElementById("webr-run-button-7");
+  const outputDiv = document.getElementById("webr-code-output-7");
+  const editorDiv = document.getElementById("webr-editor-7");
+
+  const editor = CodeMirror((elt) => {
+    elt.style.border = "1px solid #eee";
+    elt.style.height = "auto";
+    editorDiv.append(elt);
+  },{
+    value: `# estimate mass of the three species\n# with the constraint that Adelie and Chinstrap have the same mass\nmy_loss = function(par, mass, spmat) {\n  sum( abs((mass - spmat %*% as.matrix(par[1:3]))), na.rm=TRUE) +\n    par[4] * (par[1] - par[2])\n}\n\n# we have to minimized *squared* gradients now because Lagrange multipliers find\n# a saddlepoint, which is only a local minimum.\nopt_loss = function(par, mass, spp_mat) {\n  par=par\n  nd = numericDeriv(quote(my_loss(par, mass, spp_mat)), "par")\n  sum(attr(nd, "gradient")^2)\n}\n\n# run the optimizer  \noptim(par = c(3000, 3000, 5000, 0),\n     fn = opt_loss,\n     mass = penguins$body_mass_g,\n     spp_mat = species_indicator)`,
     lineNumbers: true,
     mode: "r",
     theme: "light default",

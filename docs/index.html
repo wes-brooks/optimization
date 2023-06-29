@@ -130,7 +130,7 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
   <ul class="collapse">
-  <li><a href="#webr-example" id="toc-webr-example" class="nav-link" data-scroll-target="#webr-example">WebR example</a></li>
+  <li><a href="#optim-example" id="toc-optim-example" class="nav-link" data-scroll-target="#optim-example"><code>optim()</code> example</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -197,8 +197,9 @@ ul.task-list li input[type="checkbox"] {
 <h1 class="unnumbered">Overview</h1>
 <p>Optimization here is understood to mean <em>function optimization</em>, which is finding the parameters that minimize or maximize a function. This is how parameters are estimated - for instance, you might observe the motion of some falling objects and use that data to estimate the constant of gravitational acceleration. In this example, you’d start with an equation derived from theory, like: <span class="math display">\[ y(t) = \frac{gt^2}{2} \]</span> plus some data (observations of <span class="math inline">\(y\)</span> and <span class="math inline">\(t\)</span>), then use optimization to find the value of <span class="math inline">\(g\)</span> that fits the data best.</p>
 <p>What does it mean to “fit the data best”? In this case, you’d probably use a measure of error that can handle errors to both positive and negative directions, like squared error (<span class="math inline">\(\sum_{i=1}^n(y_i - \frac{gt_i^2}{2})^2\)</span>) or absolute error (<span class="math inline">\(\sum_{i=1}^n|y_i - \frac{gt_i^2}{2}|\)</span>). Then you would minimize the error. This minimization (or maximization) is what optimization is all about.</p>
-<section id="webr-example" class="level2">
-<h2 class="anchored" data-anchor-id="webr-example">WebR example</h2>
+<section id="optim-example" class="level2">
+<h2 class="anchored" data-anchor-id="optim-example"><code>optim()</code> example</h2>
+<p>Your favorite scripting/analysis software surely comes with an optimizer built in. Here, we’ll use R’s <code>optim()</code> to estimate <code>g</code>, the acceleration due to gravity. I dropped ten balls from a height of five meters and measured how long it took for them to hit the ground. Using that data, I will say that the loss is the absolute difference between the five meters of actual height and the distance that the balls should have fallen for any particular estimate of <code>g</code> (which is <span class="math inline">\((g \times t^2) / 2\)</span>).</p>
 <div class="cell">
 <button class="btn btn-default btn-webr" disabled="" type="button" id="webr-run-button-1">
 Loading webR…
@@ -219,7 +220,7 @@ Loading webR…
     elt.style.height = "auto";
     editorDiv.append(elt);
   },{
-    value: `# input the data\ny = c(5.4, 6.4, 5.4, 6.6, 3.3, 5.9, 3.3, 6.5, 5.4, 5.0)\ntime = c(1.04, 1.15, 1.04, 1.16, 0.83, 1.1, 0.81, 1.13, 1.03, 1.03)\n\n# define the loss function\nerr = function(g, x, t) {\n  abs(x - g * t^2 / 2) |>\n    sum()\n}\n\n# find the parameter that minimizes loss\noptim(0, fn=err, x=y, t=time)`,
+    value: `# input the data\ntime = c(0.93, 1.13, 1.01, 0.81, 0.88, 0.97, 1.04, 1.08, 0.98, 1.16)\n\n# define the loss function\nerr = function(g, t) {\n  abs(5 - g * t^2 / 2) |>\n    sum()\n}\n\n# find the parameter that minimizes loss\noptim(0, fn=err, t=time)`,
     lineNumbers: true,
     mode: "r",
     theme: "light default",
@@ -285,6 +286,7 @@ Loading webR…
   runButton.disabled = false;
 </script>
 </div>
+<p>Now, we’ll look at how <code>optim()</code> does that.</p>
 
 
 </section>

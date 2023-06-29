@@ -11,6 +11,8 @@ webr:
 
 {{< include _webr-include.qmd >}}
 
+# URL for the presentation is wes-brooks.github.io/optimization {.unnumbered}
+
 
 # Overview {.unnumbered}
 

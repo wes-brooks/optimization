@@ -22,34 +22,94 @@ Next, we can break optimization algorithms into categories based on how much inf
 Here is an example:
 
 ```{webr grad-descent-setup-grid, echo=FALSE}
-source("prepare_grid_plots.R")
+source("https://raw.githubusercontent.com/wes-brooks/optimization/main/prepare_grid_plots.R")
 ```
 
+### Newton-Raphson
+This algorithm is for the case that you know first and second derivatives of the function you are optimizing. It is also important that the function be convex, or the solution may not be found.
+
+Newton-Raphson optimization takes the Taylor expansion of the function to two terms, which means approximating the function as a parabola starting from some starting point. The minimum of a parabola is easy to find analytically (closed form), so we jump to that point and iterate the process. This makes more sense if you see it in action:
 
 ```{webr plot-newton-raphson-grid}
 # first pass:
-drawIt(gplot_nr)
+#drawIt(gplot_nr)
 
 # second pass:
-res = iterate_nr(gplot_nr, x_last = 2.5)
-drawIt(res[["plot"]])
+#res = iterate_nr(gplot_nr, xloc = 2.5)
+#drawIt(res[["plot"]])
 
 # third and sbsequent passes:
-res = iterate_nr(res[["plot"]], x_last = res[["x_new"]])
-drawIt(res[["plot"]])
+#res = iterate_nr(res[["plot"]], xloc = res[["x_new"]])
+#drawIt(res[["plot"]])
 ```
+
+
+Newton-Raphson is very fast because each step is closed-form. But because the Newton-Raphson algorithm requires evaluating to the second derivative, it can be very slow to optimize a high-dimensional problem (remember that you need to evaluate cross-derivatives of a vector function, so that's $p^2$ derivatives for $p$ parameters - but even wouldn't be so bad if you didn't then need to invert the second-derivative matrix. Truly nasty stuff. I've crashed clusters this way.)
+
+### Gradient descent
+When the second derivatives are unknown or impractical, gradient descent may work better. For gradient descent, you ony need the first derivative w.r.t. each parameter, then take a step in the direction of greatest improvement in the objective. This is simple but not so fast as Newton-Raphson because the size of each step must be tuned by a loop. Still, it is fast and simple and usually the best choice when you're in a situation of needing to call an optimizer (rather than a professionally engineered estimation function). There are many flavors of gradient descent to improve its speed and stability, but the only one worth mentioning here is conjugate gradient descent (commonly abbreviated CG), which includes some momentum from past steps in future steps. Again, an example may help illustrate the algorithm:
 
 
 ```{webr plot-grad-descent-grid}
 # first pass:
-drawIt(gplot_gd)
+#drawIt(gplot_gd)
 
 # second pass:
-result = iterate_gd(gplot_gd, gamma = 0.005, x_last = 2.5)
-drawIt(result[["plot"]])
+#result_gd = iterate_gd(gplot_gd, gamma = 0.005, x_last = 2.5)
+#drawIt(result_gd[["plot"]])
 
 # third and sbsequent passes:
-res = iterate_gd(res[["plot"]], gamma = result[["gamma"]], x_last = res[["x_new"]])
-drawIt(res[["plot"]])
+#result_gd = iterate_gd(result_gd[["plot"]], gamma = result_gd[["gamma"]], x_last = result_gd[["x_new"]])
+#drawIt(result_gd[["plot"]])
 ```
 
+
+### Quick-and-dirty options
+When your number of parameters is small and the data size is modest, you may not have to bother with calculating derivatives. The built-in general-purpose optimization functions in R and Python default to Nelder-Mead or BFGS algorithms, which essentially make each step by trying a bunch of candidates around the current location. They are "slow" in the computer, but fast for the scientist - and only the scientist gets paid for their time.
+
+### Automatic differentiation
+On the other hand, if your problem is very complicated, your easiest bet may be to use automatic differentiation and then conjugate gradient descent or Newton-Raphson. The widely used differentiation package is [`adcomp`, aka Template Model Builder (TMB)](https://github.com/kaskr/adcomp). You use it by writing your objective function as a C++ function template, and then the `adcomp` software hits everything with the chain rule as many ties as necessary to get derivatives. I love this but the barrier to entry is large. 
+
+### Constrained optimization
+Often, the reason to do custom optimization is because you need to constrain your solution, such as saying that all of the parameters should sum to one. Equality constraints are easy to implement via *Lagrange multipliers*. This is a fancy name for adding something like $\lambda (\sum_{i=1}^p \beta_i - 1)$ to your loss function. Since the minimum is found where the derivative of this term w.r.t. $\lambda$ is zero, the minimum is where $\sum_{i=1}^p \beta_i = 1$. Let's try it:
+
+```{webr}
+# import the Palmer penguins data
+penguins = read.csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv")
+head(penguins)
+
+# estimate mass of the three species
+# with the constraint that Adelie are 75% the mass of Gentoo
+my_loss = function(mass, adelie, chinstrap, gentoo) {
+  aa = sum((adelie - mass[1])^2, na.rm=TRUE)
+  cc =  sum((chinstrap - mass[2])^2, na.rm=TRUE) 
+  gg =  sum((gentoo - mass[3])^2, na.rm=TRUE) 
+  cons =  mass[4] * (mass[2] - mass[1])
+  
+  cat("aa: ", aa, "\n")
+  cat("cc: ", cc, "\n")
+  cat("gg: ", gg, "\n")
+  cat("cons: ", cons, "\n")
+  cat("tot: ", aa + cc + gg + cons, "\n\n")
+  
+  
+  aa + cc + gg + cons
+}
+
+with(penguins,
+     optim(par = c(Adelie=0, Chinstrap=0, Gentoo=0, lambda=0),
+           fn = my_loss,
+           adelie = body_mass_g[species == "Adelie"],
+           chinstrap = body_mass_g[species == "Chinstrap"],
+           gentoo = body_mass_g[species == "Gentoo"])
+)
+
+```
+
+
+## Discrete parameters
+
+When parameters are discrete, the loss isn't continuous, so you can't minimize the function by finding where the derivatives w.r.t. the parameters are zero. For small problems 9like deciding which of three variables should be included in a regression model), it is easy enough to check all possible combinations and choose the best one. But to search all of the possible solutions to a large problem would be combinatorically impossible (e.g. the number of outcomes when shuffling a 52-card deck is on the order of the number of atoms in the universe). For problems like that, I'd recommend genetic algorithms. I'm not going to provide an example because they require packages outside of the base R or Python.
+
+### Genetic algorithm
+The gist of a genetic algorithm is that you define a "fitness" function (like our loss functions for continuous optiization) as well as a population of randomly selected combinations of parameters. The candidates in that population are then passed to the next generation with a probability proportional to their fitness and those that pass through are also randomly modified (aka "mutated") by a small amount. After any generations of this process, you may end up with a good solution to the optimization problem.

@@ -46,15 +46,37 @@ gplot <- addGrob(
             vp = "plotRegion::dataRegion",
             gp = gpar(lty="dotted")))
 
-iterate_gd = function(gp, gamma, x_last) {
+
+gplot_nonconvex <- gTree(
+  x = NULL,
+  y = NULL,
+  childrenvp = vpTree(
+    plotViewport(c(5, 4, 4, 2), name = "plotRegion"),
+    vpList(
+      viewport(
+        name="dataRegion",
+        xscale = xlim,
+        yscale = ylim))),
+  children = gList(
+    xaxisGrob(vp = "plotRegion::dataRegion"),
+    yaxisGrob(vp = "plotRegion::dataRegion")))
+
+gplot_nonconvex <- addGrob(
+  gplot_nonconvex,
+  linesGrob(x=xcoord(xx),
+            y=ycoord(f(xx)),
+            vp = "plotRegion::dataRegion",
+            gp = gpar(lty="dotted")))
+
+iterate_gd = function(gp, gamma, x_last, fn=fww, d1_fn=fww1) {
   finished = FALSE
-  grad = fww1(x_last)
+  grad = d1_fn(x_last)
   
   while (!finished) {
     
     gamma = gamma / 0.8
-    trial = fww(x_last - grad * gamma)
-    if (trial > fww(x_last) + sign(grad)* 0.2*gamma*grad^2) {
+    trial = fn(x_last - grad * gamma)
+    if (trial > fn(x_last) + sign(grad)* 0.2*gamma*grad^2) {
       
       gamma = gamma * 0.8^2
     } else {
@@ -68,7 +90,7 @@ iterate_gd = function(gp, gamma, x_last) {
     gp,
     linesGrob(
       x = xcoord(c(x_last, x_next)),
-      y = ycoord(c(fww(x_last), fww(x_last) - gamma*grad^2)),
+      y = ycoord(c(fn(x_last), fn(x_last) - gamma*grad^2)),
       gp = gpar(
         col = "purple",
         lty="dotted"),
@@ -77,7 +99,7 @@ iterate_gd = function(gp, gamma, x_last) {
     gp,
     pointsGrob(
       x = x_last,
-      y = fww(fww(x_last)),
+      y = fn(x_last),
       gp = gpar(
         col="red"
       ),
@@ -87,7 +109,7 @@ iterate_gd = function(gp, gamma, x_last) {
 }
 
 # first step
-iterate_nr = function(gp, xloc) {
+iterate_nr = function(gp, xloc, fn=fww, d1_fn=fww1, d2_fn=fww2, approx_fn=fwwf) {
   
   # lines(xx, fwwf(xx, start=xloc), lty=2)
   # xnew = xloc - fww1(xloc)/fww2(xloc)
@@ -97,7 +119,7 @@ iterate_nr = function(gp, xloc) {
     gp,
     linesGrob(
       x = xcoord(xx),
-      y = ycoord(fwwf(xx, start=xloc)),
+      y = ycoord(approx_fn(xx, start=xloc)),
       gp = gpar(
         col = "purple",
         lty="dotted"),
@@ -106,15 +128,16 @@ iterate_nr = function(gp, xloc) {
     gp,
     pointsGrob(
       x = xloc,
-      y = fww(xloc),
+      y = fn(xloc),
       gp = gpar(
         col="red"
       ),
       vp = "plotRegion::dataRegion"))
   
   
-  list(x_new = xloc - fww1(xloc)/fww2(xloc), plot = gp)
+  list(x_new = xloc - d1_fn(xloc)/d2_fn(xloc), plot = gp)
 }
 
+gplot_nr = gplot_gd = gplot
 path = c(2.5)
 gamma = 0.005

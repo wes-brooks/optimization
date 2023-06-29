@@ -20,28 +20,21 @@ plus some data (observations of $y$ and $t$), then use optimization to find the 
 
 What does it mean to "fit the data best"? In this case, you'd probably use a measure of error that can handle errors to both positive and negative directions, like squared error ($\sum_{i=1}^n(y_i - \frac{gt_i^2}{2})^2$) or absolute error ($\sum_{i=1}^n|y_i - \frac{gt_i^2}{2}|$). Then you would minimize the error. This minimization (or maximization) is what optimization is all about.
 
-## WebR example
+## `optim()` example
+Your favorite scripting/analysis software surely comes with an optimizer built in. Here, we'll use R's `optim()` to estimate `g`, the acceleration due to gravity. I dropped ten balls from a height of five meters and measured how long it took for them to hit the ground. Using that data, I will say that the loss is the absolute difference between the five meters of actual height and the distance that the balls should have fallen for any particular estimate of `g` (which is $(g \times t^2) / 2$).
 
 ```{webr intro}
 # input the data
-y = c(5.4, 6.4, 5.4, 6.6, 3.3, 5.9, 3.3, 6.5, 5.4, 5.0)
-time = c(1.04, 1.15, 1.04, 1.16, 0.83, 1.1, 0.81, 1.13, 1.03, 1.03)
+time = c(0.93, 1.13, 1.01, 0.81, 0.88, 0.97, 1.04, 1.08, 0.98, 1.16)
 
 # define the loss function
-err = function(g, x, t) {
-  abs(x - g * t^2 / 2) |>
+err = function(g, t) {
+  abs(5 - g * t^2 / 2) |>
     sum()
 }
 
 # find the parameter that minimizes loss
-optim(0, err, x=y, t=time)
+optim(0, fn=err, t=time)
 ```
 
-
-```{webr}
-
-# second 
-
-```
-
-v
+Now, we'll look at how `optim()` does that.

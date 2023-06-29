@@ -24,7 +24,11 @@ plus some data (observations of $y$ and $t$), then use optimization to find the 
 What does it mean to "fit the data best"? In this case, you'd probably use a measure of error that can handle errors to both positive and negative directions, like squared error ($\sum_{i=1}^n(y_i - \frac{gt_i^2}{2})^2$) or absolute error ($\sum_{i=1}^n|y_i - \frac{gt_i^2}{2}|$). Then you would minimize the error. This minimization (or maximization) is what optimization is all about.
 
 ## `optim()` example
-Your favorite scripting/analysis software surely comes with an optimizer built in. Here, we'll use R's `optim()` to estimate `g`, the acceleration due to gravity. I dropped ten balls from a height of five meters and measured how long it took for them to hit the ground. Using that data, I will say that the loss is the absolute difference between the five meters of actual height and the distance that the balls should have fallen for any particular estimate of `g` (which is $(g \times t^2) / 2$).
+Your favorite scripting/analysis software surely comes with an optimizer built in. Here, we'll use R's `optim()` to estimate `g`, the acceleration due to gravity. 
+
+Ther are also a huge number of add-in packages to R that do more specialized optimization, and if you need to seek one out, [the CRAN task view for optiization is extensive](https://cran.r-project.org/web/views/Optimization.html).
+
+I dropped ten balls from a height of five meters and measured how long it took for them to hit the ground. Using that data, I will say that the loss is the absolute difference between the five meters of actual height and the distance that the balls should have fallen for any particular estimate of `g` (which is $(g \times t^2) / 2$).
 
 ```{webr intro}
 # input the data
